@@ -1,0 +1,47 @@
+{
+  "location": "${LOCATION}",
+  "properties": {
+    "description": "SRE Agent demo - guest CPU/memory perf counters + Windows service-control events",
+    "dataSources": {
+      "performanceCounters": [
+        {
+          "name": "guestPerf",
+          "streams": [ "Microsoft-Perf" ],
+          "samplingFrequencyInSeconds": 60,
+          "counterSpecifiers": [
+            "\\Processor(_Total)\\% Processor Time",
+            "\\Memory\\% Committed Bytes In Use",
+            "\\Memory\\Available MBytes"
+          ]
+        }
+      ],
+      "windowsEventLogs": [
+        {
+          "name": "serviceEvents",
+          "streams": [ "Microsoft-Event" ],
+          "xPathQueries": [
+            "System!*[System[Provider[@Name='Service Control Manager'] and (EventID=7036 or EventID=7031 or EventID=7034)]]"
+          ]
+        }
+      ]
+    },
+    "destinations": {
+      "logAnalytics": [
+        {
+          "name": "law-dest",
+          "workspaceResourceId": "${LAW_ID}"
+        }
+      ]
+    },
+    "dataFlows": [
+      {
+        "streams": [ "Microsoft-Perf" ],
+        "destinations": [ "law-dest" ]
+      },
+      {
+        "streams": [ "Microsoft-Event" ],
+        "destinations": [ "law-dest" ]
+      }
+    ]
+  }
+}
