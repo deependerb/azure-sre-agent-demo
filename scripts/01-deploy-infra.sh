@@ -40,12 +40,14 @@ az network vnet create -g "${RESOURCE_GROUP}" -n "${VNET_NAME}" -l "${LOCATION}"
   --subnet-name "${SUBNET_NAME}" --subnet-prefixes 10.20.1.0/24 -o none
 
 echo "==> Creating Windows VM ${VM_NAME}"
+# No public IP: the SRE Agent acts via the Azure control plane + run-command,
+# not RDP. Some subscriptions (e.g. MCAPS) block public IPs by policy.
 az vm create \
   -g "${RESOURCE_GROUP}" -n "${VM_NAME}" -l "${LOCATION}" \
   --image "${VM_IMAGE}" --size "${VM_SIZE}" \
   --admin-username "${VM_ADMIN_USERNAME}" --admin-password "${VM_ADMIN_PASSWORD}" \
   --vnet-name "${VNET_NAME}" --subnet "${SUBNET_NAME}" --nsg "${NSG_NAME}" \
-  --public-ip-sku Standard --nic-delete-option Delete --os-disk-delete-option Delete \
+  --public-ip-address "" --nic-delete-option Delete --os-disk-delete-option Delete \
   -o none
 VM_ID=$(az vm show -g "${RESOURCE_GROUP}" -n "${VM_NAME}" --query id -o tsv)
 
