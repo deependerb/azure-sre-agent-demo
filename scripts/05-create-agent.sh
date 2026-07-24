@@ -7,13 +7,13 @@
 #   api-version: 2025-05-01-preview   (PREVIEW)
 #
 # This script automates the PREREQUISITES (managed identity + App Insights)
-# and ATTEMPTS the control-plane PUT to create the agent.
+# and creates the agent via the control-plane PUT.
 #
-# IMPORTANT (verified 2026-07): the create body requires a field
-# 'agentAppEnvelope' whose schema is NOT publicly documented in the preview
-# API. If the PUT below returns a 400 about 'agentAppEnvelope', create the
-# agent ONCE in the portal wizard (https://sre.azure.com) - it takes 2-5 min -
-# then run scripts 03 (RBAC) and 06 (config). Everything else is scriptable.
+# KEY (verified working 2026-07): properties.actionConfiguration.identity MUST
+# be set to the user-assigned managed identity resource id, and the same MI must
+# appear in the top-level identity block. If the PUT still returns a preview-API
+# error in your tenant, create the agent once in the portal (https://sre.azure.com,
+# 2-5 min) then run scripts 03 (RBAC) and 06 (config).
 # ---------------------------------------------------------------------
 source "$(dirname "${BASH_SOURCE[0]}")/00-variables.sh"
 
@@ -41,7 +41,7 @@ cat > /tmp/${AGENT_NAME}-body.json <<JSON
   "location": "${LOCATION}",
   "identity": { "type": "UserAssigned", "userAssignedIdentities": { "${MI_ID}": {} } },
   "properties": {
-    "actionConfiguration": { "mode": "Review", "accessLevel": "High" },
+    "actionConfiguration": { "mode": "Review", "accessLevel": "High", "identity": "${MI_ID}" },
     "defaultModel": { "provider": "Anthropic", "name": "Automatic" },
     "knowledgeGraphConfiguration": { "identity": "${MI_ID}", "managedResources": [ "${RG_ID}" ] },
     "incidentManagementConfiguration": { "type": "AzMonitor" },
