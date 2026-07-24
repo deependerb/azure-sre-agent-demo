@@ -40,9 +40,22 @@ chmod +x scripts/*.sh
 ./scripts/02-deploy-monitoring.sh   # DCR + alerts (S1-S3) + action group
 ```
 
-### Create + wire the SRE Agent (portal)
-1. Portal → **SRE Agent → Create** in the demo RG. It creates a **managed identity**.
-2. Copy that identity's object id into `.env` as `SRE_AGENT_MI_PRINCIPAL_ID`, then:
+### Create + wire the SRE Agent
+The agent is an ARM resource (`Microsoft.App/agents`, api `2025-05-01-preview`).
+Prerequisites (managed identity + App Insights) and an attempted create are
+scripted; the create body uses a preview-only `agentAppEnvelope` schema that
+isn't publicly documented, so the portal wizard is the reliable path for that
+single step.
+
+1. Run the prereqs + attempt automated create:
+   ```bash
+   ./scripts/05-create-agent.sh
+   ```
+   If it reports the preview-API 400, create the agent once at
+   **https://sre.azure.com** (subscription/RG/name/region + model = Anthropic),
+   which takes 2-5 min.
+2. Copy the agent's **managed-identity object id** into `.env` as
+   `SRE_AGENT_MI_PRINCIPAL_ID`, then grant RBAC:
    ```bash
    ./scripts/03-assign-rbac.sh       # VM Contributor + Log Analytics Reader (RG scope)
    ```
