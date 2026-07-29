@@ -36,6 +36,10 @@ az monitor app-insights component create -g "${RESOURCE_GROUP}" -a "${APPI_NAME}
 RG_ID="/subscriptions/${SUBSCRIPTION_ID}/resourceGroups/${RESOURCE_GROUP}"
 
 echo "==> Attempting control-plane PUT for agent ${AGENT_NAME} (preview API)"
+# App Insights details so Operations Hub analytics work out of the box
+APPI_APPID=$(az monitor app-insights component show -g "${RESOURCE_GROUP}" -a "${APPI_NAME}" --query appId -o tsv 2>/dev/null)
+APPI_CONN=$(az monitor app-insights component show -g "${RESOURCE_GROUP}" -a "${APPI_NAME}" --query connectionString -o tsv 2>/dev/null)
+APPI_ID=$(az monitor app-insights component show -g "${RESOURCE_GROUP}" -a "${APPI_NAME}" --query id -o tsv 2>/dev/null)
 cat > /tmp/${AGENT_NAME}-body.json <<JSON
 {
   "location": "${LOCATION}",
@@ -45,6 +49,11 @@ cat > /tmp/${AGENT_NAME}-body.json <<JSON
     "defaultModel": { "provider": "Anthropic", "name": "Automatic" },
     "knowledgeGraphConfiguration": { "identity": "${MI_ID}", "managedResources": [ "${RG_ID}" ] },
     "incidentManagementConfiguration": { "type": "AzMonitor" },
+    "logConfiguration": { "applicationInsightsConfiguration": {
+      "appId": "${APPI_APPID}",
+      "connectionString": "${APPI_CONN}",
+      "applicationInsightsResourceId": "${APPI_ID}"
+    }},
     "upgradeChannel": "Stable"
   }
 }

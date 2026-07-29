@@ -73,15 +73,16 @@ az monitor scheduled-query create \
   --description "IIS/DB service stopped - SRE Agent scenario 3" -o none || \
   echo "    (If this errored on syntax, create S3 in the portal using the KQL in response-plans/kql-queries.md)"
 
-# --- Scenario 1: VM powered off (Activity Log alert) ---
-echo "==> Alert S1: VM deallocate/power-off activity"
-az monitor activity-log alert create \
-  -g "${RESOURCE_GROUP}" -n "${PREFIX}-s1-vm-stopped" \
-  --scope "${VM_ID}" \
-  --condition category=Administrative and operationName=Microsoft.Compute/virtualMachines/deallocate/action \
-  --action-group "${AG_ID}" \
-  --description "VM powered off - SRE Agent scenario 1 (time-window logic handled in the runbook)" -o none || \
-  echo "    (Activity-log alert syntax varies by CLI version; see response-plans/kql-queries.md)"
+# --- Scenario 1: VM unavailable (metric alert, 1-min for fastest detection) ---
+echo "==> Alert S1: VM availability < 1 (1-min metric alert - fastest detection)"
+az monitor metrics alert create \
+  -g "${RESOURCE_GROUP}" -n "${PREFIX}-s1b-vm-unavailable" \
+  --scopes "${VM_ID}" \
+  --condition "avg VmAvailabilityMetric < 1" \
+  --window-size 1m --evaluation-frequency 1m \
+  --severity 1 --action "${AG_ID}" --auto-mitigate true \
+  --description "VM availability < 1 (VM down) - fast 1-min detection for scenario 1" -o none || \
+  echo "    (If this errored, create the VM Availability metric alert in the portal, 1-min frequency.)"
 
 echo ""
 echo "Monitoring deployed. Action group: ${AG_ID}"
